@@ -1,6 +1,7 @@
 package server
 
 import (
+	"math"
 	"sync"
 )
 
@@ -27,12 +28,6 @@ func (pool *Pool) GetServers() []*Server {
 	pool.mux.RLock()
 	defer pool.mux.RUnlock()
 	return pool.servers
-}
-
-func (pool *Pool) GetServerCount() int {
-	pool.mux.RLock()
-	defer pool.mux.RUnlock()
-	return len(pool.servers)
 }
 
 func (pool *Pool) GetAliveServers() []*Server {
@@ -69,11 +64,11 @@ func (pool *Pool) GetNextRoundRobin() *Server {
 }
 
 func (pool *Pool) GetLeastConnections() *Server {
-	pool.mux.RLock()
-	defer pool.mux.RUnlock()
+	pool.mux.Lock()
+	defer pool.mux.Unlock()
 
 	var leastConnServer *Server
-	minConnections := int(^uint(0) >> 1)
+	minConnections := math.MaxInt
 
 	for _, server := range pool.servers {
 		if server.IsAlive() && server.GetConnections() < minConnections {

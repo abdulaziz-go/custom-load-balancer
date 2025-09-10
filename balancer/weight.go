@@ -36,7 +36,3 @@ func (wg *WeightBalancer) GetNextServer() *server.Server {
 	wg.currentIndex++
 	return weightedServers[wg.currentIndex%len(weightedServers)]
 }
-
-func (wg *WeightBalancer) SetServerPool(pool *server.Pool) {
-	wg.pool = pool
-}

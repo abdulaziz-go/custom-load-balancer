@@ -6,7 +6,6 @@ import (
 
 type LoadBalancer interface {
 	GetNextServer() *server.Server
-	SetServerPool(*server.Pool)
 }
 
 type Algorithm string

@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -25,9 +24,7 @@ func main() {
 
 	for _, backendServer := range cfg.BackendServers {
 		serverURL := backendServer.Address
-		if !strings.HasPrefix(serverURL, "http://") {
-			serverURL = "http://" + serverURL
-		}
+
 		srv, err := server.NewServerAdd(serverURL, backendServer.Weight)
 		if err != nil {
 			log.Printf("Failed to create server %s: %v", backendServer.Address, err)
