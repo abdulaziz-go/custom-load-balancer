@@ -63,3 +63,7 @@ func (hc *HealthChecker) checkServer(srv *server.Server) {
 		srv.SetAlive(true)
 	}
 }
+
+func (hc *HealthChecker) Stop() {
+	hc.done <- true
+}
