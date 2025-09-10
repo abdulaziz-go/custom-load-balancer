@@ -1,6 +1,8 @@
 package server
 
-import "sync"
+import (
+	"sync"
+)
 
 type Pool struct {
 	servers []*Server
@@ -27,6 +29,12 @@ func (pool *Pool) GetServers() []*Server {
 	return pool.servers
 }
 
+func (pool *Pool) GetServerCount() int {
+	pool.mux.RLock()
+	defer pool.mux.RUnlock()
+	return len(pool.servers)
+}
+
 func (pool *Pool) GetAliveServers() []*Server {
 	pool.mux.RLock()
 	defer pool.mux.RUnlock()
@@ -40,34 +48,39 @@ func (pool *Pool) GetAliveServers() []*Server {
 	return aliveServers
 }
 
-func (p *Pool) GetServerByNextRoundRubinAlgorithm() *Server {
-	p.mux.Lock()
-	defer p.mux.Unlock()
-	servers := p.GetAliveServers()
+func (pool *Pool) GetNextRoundRobin() *Server {
+	pool.mux.Lock()
+	defer pool.mux.Unlock()
 
-	if len(servers) == 0 {
+	aliveServers := make([]*Server, 0)
+	for _, server := range pool.servers {
+		if server.IsAlive() {
+			aliveServers = append(aliveServers, server)
+		}
+	}
+
+	if len(aliveServers) == 0 {
 		return nil
 	}
 
-	server := servers[p.current%len(servers)]
-	p.current++
+	server := aliveServers[pool.current%len(aliveServers)]
+	pool.current++
 	return server
 }
 
-func (pool *Pool) GetLeastConnectionServerAlgorithm() *Server {
+func (pool *Pool) GetLeastConnections() *Server {
 	pool.mux.RLock()
 	defer pool.mux.RUnlock()
 
 	var leastConnServer *Server
+	minConnections := int(^uint(0) >> 1)
 
-	if len(pool.servers) > 0 {
-		minConnectedServer := pool.servers[0].Connections
-		for _, server := range pool.servers {
-			if server.GetConnections() < minConnectedServer {
-				minConnectedServer = server.GetConnections()
-				leastConnServer = server
-			}
+	for _, server := range pool.servers {
+		if server.IsAlive() && server.GetConnections() < minConnections {
+			minConnections = server.GetConnections()
+			leastConnServer = server
 		}
 	}
+
 	return leastConnServer
 }

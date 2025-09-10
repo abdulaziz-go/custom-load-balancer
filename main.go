@@ -6,9 +6,11 @@ import (
 	"load-balancer/config"
 	"load-balancer/healthcheck"
 	"load-balancer/server"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -21,7 +23,19 @@ func main() {
 
 	pool := server.NewPool()
 
-	addServersToPool(pool, cfg.BackendServers)
+	for _, backendServer := range cfg.BackendServers {
+		serverURL := backendServer.Address
+		if !strings.HasPrefix(serverURL, "http://") {
+			serverURL = "http://" + serverURL
+		}
+		srv, err := server.NewServerAdd(serverURL, backendServer.Weight)
+		if err != nil {
+			log.Printf("Failed to create server %s: %v", backendServer.Address, err)
+			continue
+		}
+		pool.AddServer(srv)
+		log.Printf("Added server: %s", backendServer.Address)
+	}
 
 	if len(pool.GetAliveServers()) == 0 {
 		fmt.Printf("no server available")
@@ -54,27 +68,16 @@ func main() {
 	hc.Stop()
 }
 
-func addServersToPool(pool *server.Pool, servers []config.BackendServer) {
-	for _, backendServer := range servers {
-		srv, err := server.NewServerAdd(fmt.Sprintf("%v", backendServer.Address), backendServer.Weight)
-		if err != nil {
-			fmt.Printf("not connected to server %v", err)
-			continue
-		}
-		pool.AddServer(srv)
-	}
-}
-
 func handleRequest(w http.ResponseWriter, r *http.Request, lb balancer.LoadBalancer) {
+	fmt.Println("request received")
 	nxtServer := lb.GetNextServer()
 	if nxtServer == nil {
 		http.Error(w, "No available servers", http.StatusServiceUnavailable)
 		return
 	}
-
 	nxtServer.AddConnection()
 	defer nxtServer.RemoveConnection()
 
-	fmt.Println("request send to ", nxtServer.Url)
+	fmt.Printf(" Request sent to backend: %s\n", nxtServer.Url)
 	nxtServer.ReverseProxy.ServeHTTP(w, r)
 }

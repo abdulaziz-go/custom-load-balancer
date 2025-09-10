@@ -9,7 +9,7 @@ type LeastConnectionBalancer struct {
 }
 
 func (lc *LeastConnectionBalancer) GetNextServer() *server.Server {
-	return lc.pool.GetLeastConnectionServerAlgorithm()
+	return lc.pool.GetLeastConnections()
 }
 
 func (lc *LeastConnectionBalancer) SetServerPool(pool *server.Pool) {
