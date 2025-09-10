@@ -1,6 +1,8 @@
 package balancer
 
-import "load-balancer/server"
+import (
+	"load-balancer/server"
+)
 
 type LoadBalancer interface {
 	GetNextServer() *server.Server
@@ -22,6 +24,7 @@ func NewLoadBalancer(algorithm Algorithm, pool *server.Pool) LoadBalancer {
 	case LeastConnection:
 		return &LeastConnectionBalancer{pool: pool}
 	case Weight:
+		return &WeightBalancer{pool: pool}
 	default:
 		return &RoundRubinBalancer{pool: pool}
 	}
