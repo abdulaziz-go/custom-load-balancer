@@ -3,6 +3,7 @@ package healthcheck
 import (
 	"fmt"
 	"load-balancer/server"
+	"log"
 	"net"
 	"time"
 )
@@ -49,10 +50,12 @@ func (hc *HealthChecker) checkAllServer() {
 }
 
 func (hc *HealthChecker) checkServer(srv *server.Server) {
-	address := fmt.Sprintf("%s:%s", srv.Url.Hostname(), srv.Url.Port())
+	address := srv.Url.Host
+
 	conn, err := net.DialTimeout("tcp", address, hc.timeout)
 	if err != nil {
 		if srv.IsAlive() {
+			log.Printf("Server %s is down", address)
 			srv.SetAlive(false)
 		}
 		return
@@ -60,6 +63,7 @@ func (hc *HealthChecker) checkServer(srv *server.Server) {
 	conn.Close()
 
 	if !srv.IsAlive() {
+		log.Printf("Server %s is back online", address)
 		srv.SetAlive(true)
 	}
 }

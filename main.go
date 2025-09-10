@@ -37,7 +37,7 @@ func main() {
 	})
 
 	addr := fmt.Sprintf(":%d", cfg.LoadBalancer.Port)
-	fmt.Printf("Load balancer starting on %s with algorithm %s", addr, cfg.LoadBalancer.Algorithm)
+	fmt.Printf("Load balancer starting on %s with algorithm %s \n", addr, cfg.LoadBalancer.Algorithm)
 	fmt.Printf("Backend server count %d", len(pool.GetServers()))
 
 	go func() {
@@ -56,7 +56,7 @@ func main() {
 
 func addServersToPool(pool *server.Pool, servers []config.BackendServer) {
 	for _, backendServer := range servers {
-		srv, err := server.NewServerAdd("http://"+backendServer.Address, backendServer.Weight)
+		srv, err := server.NewServerAdd(fmt.Sprintf("%v", backendServer.Address), backendServer.Weight)
 		if err != nil {
 			fmt.Printf("not connected to server %v", err)
 			continue
@@ -67,7 +67,6 @@ func addServersToPool(pool *server.Pool, servers []config.BackendServer) {
 
 func handleRequest(w http.ResponseWriter, r *http.Request, lb balancer.LoadBalancer) {
 	nxtServer := lb.GetNextServer()
-
 	if nxtServer == nil {
 		http.Error(w, "No available servers", http.StatusServiceUnavailable)
 		return
@@ -76,5 +75,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request, lb balancer.LoadBalan
 	nxtServer.AddConnection()
 	defer nxtServer.RemoveConnection()
 
+	fmt.Println("request send to ", nxtServer.Url)
 	nxtServer.ReverseProxy.ServeHTTP(w, r)
 }

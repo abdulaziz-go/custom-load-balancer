@@ -16,17 +16,17 @@ type Server struct {
 }
 
 func NewServerAdd(serverUrl string, weight int) (*Server, error) {
-	url, err := url.Parse(serverUrl)
+	urlstr, err := url.Parse(serverUrl)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Server{
-		Url:          url,
+		Url:          urlstr,
 		Alive:        true,
 		Weight:       weight,
 		Connections:  0,
-		ReverseProxy: httputil.NewSingleHostReverseProxy(url),
+		ReverseProxy: httputil.NewSingleHostReverseProxy(urlstr),
 	}, nil
 }
 
